@@ -11,9 +11,8 @@ DEPENDENCIES:
   - SSZipArchive
 
 SPEC REPOS:
-  "git@github.com:StandardCyborg/SCCocoaPods.git":
-    - EigenCPPCocoa
   https://github.com/CocoaPods/Specs.git:
+    - EigenCPPCocoa
     - SSZipArchive
 
 EXTERNAL SOURCES:
@@ -25,14 +24,14 @@ EXTERNAL SOURCES:
 CHECKOUT OPTIONS:
   PoissonRecon:
     :commit: 9f30316c1b247736654652c72e06b3f0db2e79ed
-    :git: "git@github.com:StandardCyborg/PoissonRecon.git"
+    :git: https://github.com/StandardCyborg/PoissonRecon.git
 
 SPEC CHECKSUMS:
-  EigenCPPCocoa: a4709e53380aeb15f6027f6b3e4190abdbef3897
-  PoissonRecon: 80674507001fec81666c982732f66d6ceb71d54c
-  scsdk: 8bdcc08321923d9b4b0f3766b265c2091e70966b
+  EigenCPPCocoa: 4b79c92db8d6e634c34e28e3cf5e97ba1ab100b5
+  PoissonRecon: 5406f560a2e1dc1a82d18c1f600de1d89e04645f
+  scsdk: c735c36f12010552ccb31011e87259f3dd7c0860
   SSZipArchive: fe6a26b2a54d5a0890f2567b5cc6de5caa600aef
 
-PODFILE CHECKSUM: c9158b3a95922262409caf6678703172e1087244
+PODFILE CHECKSUM: c579d52a93d5b1b8c8e9f2cb7aeff9bc842fcca6
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

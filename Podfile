@@ -1,5 +1,7 @@
 source 'https://github.com/CocoaPods/Specs.git'
-source 'git@github.com:StandardCyborg/SCCocoaPods.git'
+# SCCocoaPods (private SSH source) removed — Standard Cyborg is defunct and the used
+# pods (SSZipArchive public; scsdk/PoissonRecon local) don't need it.
+# source 'git@github.com:StandardCyborg/SCCocoaPods.git'
 
 inhibit_all_warnings!
 
@@ -50,8 +52,11 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do | configuration |
-      configuration.build_settings['OTHER_CFLAGS'] = '-fembed-bitcode -Wno-shorten-64-to-32 -Wno-comma'
-      configuration.build_settings['OTHER_CPPFLAGS'] = '-Wno-shorten-64-to-32 -Wno-comma'
+      # Modern Clang (19+) flags so the 2018 C++ deps (esp. PoissonRecon) compile.
+      _scWarn = '-Wno-shorten-64-to-32 -Wno-comma -Wno-deprecated-declarations ' \
+                '-Wno-missing-template-arg-list-after-template-kw'
+      configuration.build_settings['OTHER_CFLAGS'] = _scWarn
+      configuration.build_settings['OTHER_CPPFLAGS'] = _scWarn
 
       # Suppress warnings about upgrading project to automatically select architectures
       configuration.build_settings.delete 'ARCHS'

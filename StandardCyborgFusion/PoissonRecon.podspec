@@ -77,7 +77,7 @@ Pod::Spec.new do |s|
   #  Supports git, hg, bzr, svn and HTTP.
   #
 
-  s.source       = { :git => "git@github.com:StandardCyborg/PoissonRecon.git", :branch => "xcodeproj" }
+  s.source       = { :git => "https://github.com/StandardCyborg/PoissonRecon.git", :branch => "xcodeproj" }
 
 
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
