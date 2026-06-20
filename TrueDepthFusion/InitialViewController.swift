@@ -15,10 +15,20 @@ class InitialViewController: UIViewController {
     
     override func viewDidLoad() {
         introLabel.text = "Take a Depth Scan with your " + UIDevice.current.localizedModel
-        
+
         if UIDevice.current.userInterfaceIdiom == .pad {
             view.backgroundColor = UIColor(white: 0.9, alpha: 1.0)
         }
+
+        // The 2018 storyboard's SCAN button gets clipped on large modern screens —
+        // tap anywhere to start scanning.
+        let tap = UITapGestureRecognizer(target: self, action: #selector(tapAnywhereToScan))
+        view.addGestureRecognizer(tap)
+        introLabel.text = (introLabel.text ?? "") + "\n\n(Tap anywhere to scan)"
+    }
+
+    @objc private func tapAnywhereToScan() {
+        scan(nil)
     }
     
     @IBAction private func scan(_ sender: UIButton?) {
