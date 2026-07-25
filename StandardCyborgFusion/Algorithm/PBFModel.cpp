@@ -153,7 +153,12 @@ static CameraVelocity _cameraVelocity(PBFAssimilatedFrameMetadata* previousFrame
     // This is going to be running VERY slowly, so force-override the delta time to 1/30s
     double deltaT = 1.0 / 30.0;
 #else
-    double deltaT = (double)(currentFrameMeta->timestamp - previousFrameMeta->timestamp);
+    // Novansa: floor deltaT at half a 30fps frame interval. Timestamps follow the
+    // capture pipeline's arrival cadence, but residual delivery jitter can still
+    // compress consecutive stamps; dividing a normal pose delta by a few
+    // milliseconds makes ordinary sensor noise read as impossible velocity and
+    // rejects frames from an almost-static camera.
+    double deltaT = fmax((double)(currentFrameMeta->timestamp - previousFrameMeta->timestamp), 1.0 / 60.0);
 #endif
     
     return CameraVelocity{

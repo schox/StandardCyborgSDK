@@ -43,6 +43,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) CVPixelBufferRef depthBuffer;
 @property (nonatomic, readonly) CVPixelBufferRef colorBuffer;
 @property (nonatomic, readonly) AVCameraCalibrationData *calibrationData;
+// Novansa: wall-clock time the frame ARRIVED from the capture pipeline. The frame
+// timestamp used by PBFModel's velocity gates was previously taken when processing
+// STARTED on the model queue, so scheduling jitter could compress the apparent
+// inter-frame time to a few ms — making normal pose noise read as impossible
+// camera velocity and rejecting frames from an almost-static camera.
+@property (nonatomic) CFAbsoluteTime arrivalTime;
 
 - (instancetype)initWithSequence:(int)sequence
                      depthBuffer:(CVPixelBufferRef)depthBuffer
@@ -376,6 +382,7 @@ NS_ASSUME_NONNULL_BEGIN
                                                                     depthBuffer:depthBuffer
                                                                     colorBuffer:colorBuffer
                                                                 calibrationData:calibrationData];
+        data.arrivalTime = CFAbsoluteTimeGetCurrent();
         CVPixelBufferRelease(depthBuffer);
         CVPixelBufferRelease(colorBuffer);
         
@@ -573,7 +580,9 @@ static const float kCenterDepthExpansionRatio = 1.4;
     
     [self _modelQueue_configureModelForRawFrame];
     
-    auto metadata = _modelQueue_model->assimilate(*_modelQueue_frame, _pbfConfig, _icpConfig, _surfelFusionConfig, startTime);
+    // Novansa: timestamp the frame with its ARRIVAL time (capture-pipeline cadence),
+    // not the processing start time — see _IncomingFrameData.arrivalTime.
+    auto metadata = _modelQueue_model->assimilate(*_modelQueue_frame, _pbfConfig, _icpConfig, _surfelFusionConfig, data.arrivalTime);
     
 #ifndef XCODE_ACTION_install // Avoid logging in archive builds
     float quality = metadata.icpUnusedIterationFraction;
