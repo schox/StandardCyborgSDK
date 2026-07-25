@@ -38,6 +38,7 @@ typedef struct {
     NSInteger rejectedLinearVelCount;     // linear velocity gate
     NSInteger rejectedPoseJumpCount;      // absolute pose-jump gate
     NSInteger rejectedFusionCount;        // surfel fusion draw failure
+    NSInteger poorTrackingCount;          // merged but flagged poor quality
 } SCReconstructionManagerStatistics;
 
 /**

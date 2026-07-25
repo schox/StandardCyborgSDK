@@ -523,8 +523,12 @@ static const float kCenterDepthExpansionRatio = 1.4;
         
         dispatch_sync(_inputQueue, ^{
             switch (metadata.result) {
-                case SCAssimilatedFrameResultSucceeded:
                 case SCAssimilatedFrameResultPoorTracking:
+                    // Novansa: count poor-quality merges separately (still succeeded).
+                    _inputQueue_statistics.poorTrackingCount += 1;
+                    // Intentional fall-through
+
+                case SCAssimilatedFrameResultSucceeded:
                     _inputQueue_statistics.succeededCount += 1;
                     _inputQueue_statistics.consecutiveLostTrackingCount = 0;
                     break;

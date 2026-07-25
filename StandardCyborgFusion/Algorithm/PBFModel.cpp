@@ -215,7 +215,20 @@ PBFAssimilatedFrameMetadata PBFModel::assimilate(ProcessedFrame& frame,
             frameMeta.rejectionReason = 1;
         } else {
             frameMeta.icpUnusedIterationFraction = 1.0f - (float)icpResult.iterationCount / (float)icpConfig.maxIterations;
-            
+
+            // Novansa: hitting the iteration cap is not itself evidence of a bad
+            // pose — on noisy (e.g. specular) depth the correspondence error
+            // oscillates just above the relative-change tolerance and ICP runs to
+            // the cap with a usable pose. Rejecting those frames (fraction == 0
+            // fails the acceptance check below, with no rejection reason) was the
+            // dominant hidden loss mechanism: ~97% of lost frames. Accept them as
+            // poor-quality (0 < fraction < 0.1 classifies as PoorTracking);
+            // genuinely bad poses are caught by the velocity gates and the
+            // absolute pose-jump gate below.
+            if (frameMeta.icpUnusedIterationFraction <= 0.0f) {
+                frameMeta.icpUnusedIterationFraction = 0.01f;
+            }
+
             CameraVelocity cv = _cameraVelocity(previousFrameMeta, &frameMeta);
             
             if (cv.angularVelocity.hasNaN() || cv.angularVelocity.norm() > pbfConfig.maxCameraAngularVelocity) {
