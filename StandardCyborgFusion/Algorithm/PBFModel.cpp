@@ -221,6 +221,35 @@ PBFAssimilatedFrameMetadata PBFModel::assimilate(ProcessedFrame& frame,
                 DEBUG_LOG("Rejecting ICP due to bad fit with linear velocity %f", cv.velocity.norm());
                 frameMeta.icpUnusedIterationFraction = 0;
             }
+
+            // Novansa: absolute pose-jump cap. The velocity gates above divide by the
+            // time since the last MERGED frame, so after a lost-tracking streak they
+            // dilute (1.2s gap x 0.6 m/s allows a 72 cm jump) and a wrong-but-converged
+            // re-lock fuses badly mis-registered geometry (detached/duplicated sheets).
+            // Cap the jump absolutely, regardless of elapsed time: a correct re-lock
+            // after a gap is near the last merged pose (the operator moves slowly);
+            // a distant "convergence" is a mis-lock. Rejection here degrades to a
+            // clean lost-tracking streak -> engine failure -> clean stop, never a ghost.
+            // At 30fps consecutive frames these caps are far looser than the velocity
+            // gates, so normal tracking is unaffected. Angle uses the same per-axis
+            // acos-norm measure as _cameraVelocity for consistency.
+            else if (previousFrameMeta != nullptr) {
+                static const float kMaxPoseJumpMeters = 0.04f;
+                static const float kMaxPoseJumpAxisAngleNorm = 0.20f;  // ~11.5 deg equivalent
+
+                Matrix4f currInv = frameMeta.viewMatrix.inverse();
+                Matrix4f prevInv = previousFrameMeta->viewMatrix.inverse();
+                float translationJump = (currInv.col(3).head<3>() - prevInv.col(3).head<3>()).norm();
+                Vector3f axisAngles(
+                    acosf(fminf(1.0f, fmaxf(-1.0f, currInv.col(0).head<3>().dot(prevInv.col(0).head<3>())))),
+                    acosf(fminf(1.0f, fmaxf(-1.0f, currInv.col(1).head<3>().dot(prevInv.col(1).head<3>())))),
+                    acosf(fminf(1.0f, fmaxf(-1.0f, currInv.col(2).head<3>().dot(prevInv.col(2).head<3>())))));
+
+                if (translationJump > kMaxPoseJumpMeters || axisAngles.norm() > kMaxPoseJumpAxisAngleNorm) {
+                    DEBUG_LOG("Rejecting ICP due to absolute pose jump (%f m, %f rad)", translationJump, axisAngles.norm());
+                    frameMeta.icpUnusedIterationFraction = 0;
+                }
+            }
         }
         
         if (frameMeta.icpUnusedIterationFraction > 0) {

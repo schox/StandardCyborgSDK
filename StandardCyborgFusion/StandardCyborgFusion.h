@@ -33,4 +33,9 @@ FOUNDATION_EXPORT const unsigned char StandardCyborgFusionVersionString[];
 #import <StandardCyborgFusion/SCPointCloud+SceneKit.h>
 #import <StandardCyborgFusion/SCReconstructionManager.h>
 #import <StandardCyborgFusion/SCReconstructionManagerParameters.h>
+// Novansa: expose the ICP tuning surface (iterations/tolerance/downsample/outlier
+// threshold) to the app — the setters exist and are needed to un-break the ignored
+// maxThreadCount init parameter and to tune ICP robustness from the client.
+#import <StandardCyborgFusion/SCReconstructionManagerParameters_Private.h>
+#import <StandardCyborgFusion/SCReconstructionManager_Private.h>
 #import <StandardCyborgFusion/SCScene.h>

@@ -67,7 +67,7 @@
 		761FB7A1230759AC004E48F3 /* SceneKit+Mat3x3.h in Headers */ = {isa = PBXBuildFile; fileRef = 0743595922944E0E00BDA6F9 /* SceneKit+Mat3x3.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		761FB7A2230759AC004E48F3 /* SceneKit+Mat3x4.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738A79F229361C100F33186 /* SceneKit+Mat3x4.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		761FB7A4230759AC004E48F3 /* SceneKit+Polyline.h in Headers */ = {isa = PBXBuildFile; fileRef = A5F198232293405500D72A12 /* SceneKit+Polyline.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		7623166F21EE4D44004D1AFB /* SCReconstructionManagerParameters_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7623166B21EE4D3F004D1AFB /* SCReconstructionManagerParameters_Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		7623166F21EE4D44004D1AFB /* SCReconstructionManagerParameters_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7623166B21EE4D3F004D1AFB /* SCReconstructionManagerParameters_Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		76272C10210BF32400D46B20 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 76272C0F210BF32300D46B20 /* IOSurface.framework */; };
 		762798892112D62100BD436E /* SmoothDepthKernel.mm in Sources */ = {isa = PBXBuildFile; fileRef = 762798852112D62100BD436E /* SmoothDepthKernel.mm */; };
 		7627988A2112D62100BD436E /* InitializeDepthConfidenceKernel.mm in Sources */ = {isa = PBXBuildFile; fileRef = 762798862112D62100BD436E /* InitializeDepthConfidenceKernel.mm */; };
@@ -279,7 +279,7 @@
 		A59FB560226E405000B1E369 /* SparseSurfelLandmarksIndex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A59FB55E226E405000B1E369 /* SparseSurfelLandmarksIndex.cpp */; };
 		A59FB561226E405000B1E369 /* SparseSurfelLandmarksIndex.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A59FB55F226E405000B1E369 /* SparseSurfelLandmarksIndex.hpp */; settings = {ATTRIBUTES = (Private, ); }; };
 		A59FB563226E49AA00B1E369 /* SparseSurfelLandmarksIndexTest.mm in Sources */ = {isa = PBXBuildFile; fileRef = A59FB562226E49AA00B1E369 /* SparseSurfelLandmarksIndexTest.mm */; };
-		A5A5A85A21C30AB0000978E9 /* SCReconstructionManager_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = A5A5A85921C30AB0000978E9 /* SCReconstructionManager_Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		A5A5A85A21C30AB0000978E9 /* SCReconstructionManager_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = A5A5A85921C30AB0000978E9 /* SCReconstructionManager_Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A5A5A85C21C32820000978E9 /* SCOfflineReconstructionManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = A5A5A85B21C32820000978E9 /* SCOfflineReconstructionManager.mm */; };
 		A5A5A86121C32B8A000978E9 /* SCAssimilatedFrameMetadata.h in Headers */ = {isa = PBXBuildFile; fileRef = A5A5A86021C32B8A000978E9 /* SCAssimilatedFrameMetadata.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A5A5A86321C32BE5000978E9 /* SCPointCloud.mm in Sources */ = {isa = PBXBuildFile; fileRef = A5A5A86221C32BE5000978E9 /* SCPointCloud.mm */; };
@@ -328,7 +328,7 @@
 		E8EB321224739C8C00EF7A01 /* SCMesh_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 0702F9AB234FFF8F0027D10D /* SCMesh_Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		E8EB321524739C8C00EF7A01 /* ScreenSpaceLandmark.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A57C23DF226A67010043AB56 /* ScreenSpaceLandmark.hpp */; settings = {ATTRIBUTES = (Private, ); }; };
 		E8EB321624739C8C00EF7A01 /* SCPointCloud_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = A5375B0721C86D72005B2BED /* SCPointCloud_Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		E8EB321724739C8C00EF7A01 /* SCReconstructionManager_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = A5A5A85921C30AB0000978E9 /* SCReconstructionManager_Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E8EB321724739C8C00EF7A01 /* SCReconstructionManager_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = A5A5A85921C30AB0000978E9 /* SCReconstructionManager_Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E8EB321824739C8C00EF7A01 /* SCMesh+FileIO.h in Headers */ = {isa = PBXBuildFile; fileRef = 765917C0235BE04F00543E45 /* SCMesh+FileIO.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E8EB321924739C8C00EF7A01 /* Surfel.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 76EADEE521110E82006854BF /* Surfel.hpp */; settings = {ATTRIBUTES = (Private, ); }; };
 		E8EB321A24739C8C00EF7A01 /* PerspectiveCamera+AVFoundation.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 76AF88C921CB1E52007C47E6 /* PerspectiveCamera+AVFoundation.hpp */; settings = {ATTRIBUTES = (Private, ); }; };
@@ -359,7 +359,7 @@
 		E8EB323A24739C8C00EF7A01 /* PBFFinalStatistics.h in Headers */ = {isa = PBXBuildFile; fileRef = 074869E123620F3900DC2CDB /* PBFFinalStatistics.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		E8EB323C24739C8C00EF7A01 /* crc32.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A5092C2F21C1BC50003B20BC /* crc32.hpp */; };
 		E8EB323D24739C8C00EF7A01 /* ProcessedFrame.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7609B7182117B4C600C0C8D2 /* ProcessedFrame.hpp */; settings = {ATTRIBUTES = (Private, ); }; };
-		E8EB323F24739C8C00EF7A01 /* SCReconstructionManagerParameters_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7623166B21EE4D3F004D1AFB /* SCReconstructionManagerParameters_Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E8EB323F24739C8C00EF7A01 /* SCReconstructionManagerParameters_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 7623166B21EE4D3F004D1AFB /* SCReconstructionManagerParameters_Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E8EB324024739C8C00EF7A01 /* SCFootTracking.h in Headers */ = {isa = PBXBuildFile; fileRef = 760B75A023513A6E00B53A35 /* SCFootTracking.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E8EB324124739C8C00EF7A01 /* SCLandmark2D_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 767B495122CE4DA60005A060 /* SCLandmark2D_Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		E8EB324224739C8C00EF7A01 /* MetalTextureProjection.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 07196852231F0A4400BEEE89 /* MetalTextureProjection.hpp */; settings = {ATTRIBUTES = (Private, ); }; };
