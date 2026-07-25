@@ -212,6 +212,7 @@ PBFAssimilatedFrameMetadata PBFModel::assimilate(ProcessedFrame& frame,
         if (!icpResult.succeeded) {
             DEBUG_LOG("ICP rejected due to bad convergence after %d/%d iterations", icpResult.iterationCount, icpConfig.maxIterations);
             frameMeta.icpUnusedIterationFraction = 0;
+            frameMeta.rejectionReason = 1;
         } else {
             frameMeta.icpUnusedIterationFraction = 1.0f - (float)icpResult.iterationCount / (float)icpConfig.maxIterations;
             
@@ -220,11 +221,13 @@ PBFAssimilatedFrameMetadata PBFModel::assimilate(ProcessedFrame& frame,
             if (cv.angularVelocity.hasNaN() || cv.angularVelocity.norm() > pbfConfig.maxCameraAngularVelocity) {
                 DEBUG_LOG("Rejecting ICP due to bad fit with angular velocity %f", cv.angularVelocity.norm());
                 frameMeta.icpUnusedIterationFraction = 0;
+                frameMeta.rejectionReason = 2;
             }
             
             else if (cv.velocity.hasNaN() || cv.velocity.norm() > pbfConfig.maxCameraVelocity) {
                 DEBUG_LOG("Rejecting ICP due to bad fit with linear velocity %f", cv.velocity.norm());
                 frameMeta.icpUnusedIterationFraction = 0;
+                frameMeta.rejectionReason = 3;
             }
 
             // Novansa: absolute pose-jump cap. The velocity gates above divide by the
@@ -253,6 +256,7 @@ PBFAssimilatedFrameMetadata PBFModel::assimilate(ProcessedFrame& frame,
                 if (translationJump > kMaxPoseJumpMeters || axisAngles.norm() > kMaxPoseJumpAxisAngleNorm) {
                     DEBUG_LOG("Rejecting ICP due to absolute pose jump (%f m, %f rad)", translationJump, axisAngles.norm());
                     frameMeta.icpUnusedIterationFraction = 0;
+                    frameMeta.rejectionReason = 4;
                 }
             }
         }
@@ -282,6 +286,7 @@ PBFAssimilatedFrameMetadata PBFModel::assimilate(ProcessedFrame& frame,
     ) {
         DEBUG_LOG("Frame couldn't be fused.");
         frameMeta.icpUnusedIterationFraction = 0;
+        frameMeta.rejectionReason = 5;
     } else {
         frameMeta.isMerged = true;
         frameMeta.surfelCount = _surfels.size();

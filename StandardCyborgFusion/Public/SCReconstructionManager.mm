@@ -533,8 +533,18 @@ static const float kCenterDepthExpansionRatio = 1.4;
                     _inputQueue_statistics.lostTrackingCount += 1;
                     _inputQueue_statistics.consecutiveLostTrackingCount += 1;
                     // Intentional fall-through
-                    
+
                 case SCAssimilatedFrameResultFailed:
+                    // Novansa: tally WHY the frame was rejected (see
+                    // PBFAssimilatedFrameMetadata.rejectionReason).
+                    switch (pbfMetadata.rejectionReason) {
+                        case 1: _inputQueue_statistics.rejectedICPCount += 1; break;
+                        case 2: _inputQueue_statistics.rejectedAngularVelCount += 1; break;
+                        case 3: _inputQueue_statistics.rejectedLinearVelCount += 1; break;
+                        case 4: _inputQueue_statistics.rejectedPoseJumpCount += 1; break;
+                        case 5: _inputQueue_statistics.rejectedFusionCount += 1; break;
+                        default: break;
+                    }
                     _inputQueue_stopped = YES;
                     _inputQueue_incomingFrameData = nil;
                     break;

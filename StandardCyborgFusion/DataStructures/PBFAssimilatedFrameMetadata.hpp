@@ -35,7 +35,12 @@ struct PBFAssimilatedFrameMetadata {
     size_t surfelCount = 0;
     
     float correspondenceError = 0.0f;
-    
+
     float icpUnusedIterationFraction = 0.0;
     int icpIterationCount = 0;
+
+    // Novansa: WHY a frame was rejected (isMerged == false), for diagnostics.
+    // 0 = not rejected, 1 = ICP diverged/NaN, 2 = angular velocity gate,
+    // 3 = linear velocity gate, 4 = absolute pose-jump gate, 5 = fusion failure.
+    int rejectionReason = 0;
 };

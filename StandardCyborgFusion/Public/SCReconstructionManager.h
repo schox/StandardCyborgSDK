@@ -31,6 +31,13 @@ typedef struct {
     NSInteger lostTrackingCount;
     NSInteger consecutiveLostTrackingCount;
     NSInteger droppedFrameCount;
+    // Novansa: per-reason rejection tallies (why lostTrackingCount grew) —
+    // decisive diagnostics for tracking-loss investigations.
+    NSInteger rejectedICPCount;           // ICP diverged / NaN
+    NSInteger rejectedAngularVelCount;    // angular velocity gate
+    NSInteger rejectedLinearVelCount;     // linear velocity gate
+    NSInteger rejectedPoseJumpCount;      // absolute pose-jump gate
+    NSInteger rejectedFusionCount;        // surfel fusion draw failure
 } SCReconstructionManagerStatistics;
 
 /**
