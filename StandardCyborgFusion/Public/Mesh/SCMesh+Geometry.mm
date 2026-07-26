@@ -22,16 +22,27 @@ using math::Vec2;
 
 @implementation SCMesh (StandardCyborgGeometry)
 
+// An empty std::vector's data() is nullptr, and -dataWithBytes:length: memmoves
+// unconditionally — so sizing any of these by vertexCount() rather than by the
+// vector's own size segfaults on a geometry that lacks that attribute. A mesh
+// read back from a Poisson-reconstructed PLY has positions, normals and faces
+// but NO texCoords and NO colors, which crashed
+// -[SCMesh(FileIO) initWithPLYPath:JPEGPath:] at 0x0 every time. Size by the
+// vector, and return empty data when the attribute is absent.
 + (NSData *)_positionDataFromGeometry:(const sc3d::Geometry &)geo
 {
-    return [NSData dataWithBytes:geo.getPositions().data()
-                          length:geo.vertexCount() * sizeof(Vec3)];
+    const std::vector<Vec3>& positions = geo.getPositions();
+    if (positions.empty()) { return [NSData data]; }
+    return [NSData dataWithBytes:positions.data()
+                          length:positions.size() * sizeof(Vec3)];
 }
 
 + (NSData *)_colorDataFromGeometry:(const sc3d::Geometry &)geo
 {
-    return [NSData dataWithBytes:geo.getColors().data()
-                          length:geo.vertexCount() * sizeof(Vec3)];
+    const std::vector<Vec3>& colors = geo.getColors();
+    if (colors.empty()) { return [NSData data]; }
+    return [NSData dataWithBytes:colors.data()
+                          length:colors.size() * sizeof(Vec3)];
 }
 
 
@@ -46,20 +57,25 @@ using math::Vec2;
         }
     }
     
+    if (normalizedNormals.empty()) { return [NSData data]; }
     return [NSData dataWithBytes:(const void *)normalizedNormals.data()
-                          length:geo.vertexCount() * sizeof(Vec3)];
+                          length:normalizedNormals.size() * sizeof(Vec3)];
 }
 
 + (NSData *)_texCoordDataFromGeometry:(const sc3d::Geometry &)geo
 {
-    return [NSData dataWithBytes:(const void *)geo.getTexCoords().data()
-                          length:geo.vertexCount() * sizeof(Vec2)];
+    const std::vector<Vec2>& texCoords = geo.getTexCoords();
+    if (texCoords.empty()) { return [NSData data]; }
+    return [NSData dataWithBytes:(const void *)texCoords.data()
+                          length:texCoords.size() * sizeof(Vec2)];
 }
 
 + (NSData *)_facesDataFromGeometry:(const sc3d::Geometry &)geo
 {
-    return [NSData dataWithBytes:(const void *)geo.getFaces().data()
-                          length:geo.faceCount() * sizeof(int) * 3];
+    const std::vector<Face3>& faces = geo.getFaces();
+    if (faces.empty()) { return [NSData data]; }
+    return [NSData dataWithBytes:(const void *)faces.data()
+                          length:faces.size() * sizeof(int) * 3];
 }
 
 + (SCMesh *)meshWithVertexColorsFromGeometry:(const sc3d::Geometry &)geo
