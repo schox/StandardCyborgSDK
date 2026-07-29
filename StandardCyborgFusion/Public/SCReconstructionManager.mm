@@ -744,17 +744,17 @@ static const float kCenterDepthExpansionRatio = 1.4;
     {
         for (size_t x = 0; x < depthWidth; ++x)
         {
-            size_t rgbX = (size_t)(x * depthToColorRatio.x);
-            
-            size_t rgbY;
-            if (flipsInputHorizontally) {
-                rgbY = (size_t)((depthHeight - 1 - y) * depthToColorRatio.y);
-            } else {
-                rgbY = (size_t)(y * depthToColorRatio.y);
-            }
-            
-            
-            size_t rgbIndex = (rgbY * rgbBytesPerRow + rgbX * rgbBytesPerPixel);
+            // The source row this depth pixel reads from, flipped or not.
+            const size_t srcY = flipsInputHorizontally ? (depthHeight - 1 - y) : y;
+
+            // The BLOCK of colour pixels this depth pixel covers, taken as the
+            // span to where the next depth pixel starts. Expressed that way it
+            // tiles the colour image exactly, with no gaps or overlaps, and it
+            // handles a non-integer ratio (720/480 = 1.5) without special cases.
+            const size_t rgbX0 = (size_t)(x * depthToColorRatio.x);
+            const size_t rgbY0 = (size_t)(srcY * depthToColorRatio.y);
+            const size_t rgbX1 = MIN(MAX(rgbX0 + 1, (size_t)((x + 1) * depthToColorRatio.x)), colorWidth);
+            const size_t rgbY1 = MIN(MAX(rgbY0 + 1, (size_t)((srcY + 1) * depthToColorRatio.y)), colorHeight);
             
             float depth;
             if (flipsInputHorizontally) {
@@ -769,12 +769,42 @@ static const float kCenterDepthExpansionRatio = 1.4;
                 }
             }
             
-            uint8_t b = colorBufferValues[rgbIndex + 0];
-            uint8_t g = colorBufferValues[rgbIndex + 1];
-            uint8_t r = colorBufferValues[rgbIndex + 2];
-            math::Vec3 normalizedRGB(fastApplyGammaCorrection(r * rgbNormalize),
-                                               fastApplyGammaCorrection(g * rgbNormalize),
-                                               fastApplyGammaCorrection(b * rgbNormalize));
+            // Average the block rather than point-sampling one pixel of it.
+            //
+            // This read a single colour pixel per depth pixel — `rgbX = x *
+            // ratio` truncated — so with 1280-wide colour against 640-wide
+            // depth it kept one pixel in four and discarded the rest, handing
+            // fusion that one pixel's full sensor noise. Measured on an
+            // exported scan: neighbouring points 1 mm apart differed by ~10 RGB
+            // levels and points 8 mm apart by only ~15, i.e. noise rather than
+            // signal dominated at the scale of a pen mark. Point-sampling a
+            // 1280-wide image at 640 with no low-pass also ALIASES exactly the
+            // high-frequency detail worth keeping.
+            //
+            // Averaging n samples cuts that noise by sqrt(n) and removes the
+            // aliasing. Fusion's running mean across observations then starts
+            // from a cleaner sample rather than trying to average the noise out
+            // afterwards.
+            //
+            // Averaged AFTER the gamma conversion, deliberately: that call is
+            // sRGB -> linear (x^2.2, despite the name reading the other way),
+            // and a mean of light is only meaningful in linear space. It is a
+            // handful of multiplies, so doing it per sample costs nothing that
+            // matters.
+            float rSum = 0, gSum = 0, bSum = 0;
+            size_t sampleCount = 0;
+            for (size_t sy = rgbY0; sy < rgbY1; ++sy) {
+                const uint8_t *row = colorBufferValues + sy * rgbBytesPerRow;
+                for (size_t sx = rgbX0; sx < rgbX1; ++sx) {
+                    const uint8_t *px = row + sx * rgbBytesPerPixel;
+                    bSum += fastApplyGammaCorrection(px[0] * rgbNormalize);
+                    gSum += fastApplyGammaCorrection(px[1] * rgbNormalize);
+                    rSum += fastApplyGammaCorrection(px[2] * rgbNormalize);
+                    ++sampleCount;
+                }
+            }
+            const float divSamples = sampleCount > 0 ? 1.0f / (float)sampleCount : 0.0f;
+            math::Vec3 normalizedRGB(rSum * divSamples, gSum * divSamples, bSum * divSamples);
             
             depthVectorOut[depthIndex] = isnan(depth) ? nanReplacement : depth;
             colorMatrixOut[depthIndex] = normalizedRGB;
