@@ -27,6 +27,48 @@ static inline size_t __roundUpToMultiple(size_t value, size_t multiple) {
 }
 #endif
 
+/// Novansa: wrap surfel storage for the GPU without gambling on the allocator.
+///
+/// Both call sites below used to pass `std::vector` storage straight to
+/// `newBufferWithBytesNoCopy:`, which **requires page-aligned memory**. The
+/// intent was that `Surfels` guarantees it —
+/// `typedef std::vector<Surfel> Surfels __attribute__((aligned(4096)))` in
+/// Surfel.hpp — but that attribute aligns the 24-byte *vector object*, not the
+/// heap block `.data()` returns. Nothing was aligning the actual bytes.
+///
+/// It worked only because large `malloc`s happen to come from page-aligned VM
+/// regions. A small early-scan cloud, or a change in allocator behaviour, gives
+/// a misaligned pointer — and the failure is silent: Metal returns nil, the
+/// draw produces nothing, and the frame is counted as "couldn't be fused"
+/// (rejection reason 5) with no indication why.
+///
+/// So: check, and fall back to a copying buffer when the check fails. The fast
+/// path is unchanged whenever the assumption actually holds, which is nearly
+/// always — this costs a comparison, and removes a class of failure that would
+/// otherwise present as unexplained tracking loss.
+static id<MTLBuffer> _Nullable __makeSurfelBuffer(id<MTLDevice> device,
+                                                  const void *bytes,
+                                                  size_t byteCount)
+{
+    if (byteCount == 0) { return nil; }
+
+    if (((uintptr_t)bytes % METAL_REQUIRED_ALIGNMENT) == 0) {
+        // Rounding the length up to a page is required by the no-copy API and
+        // is safe here: a page-aligned large allocation is page-granular, so
+        // the rounded length stays inside it.
+        id<MTLBuffer> buffer =
+            [device newBufferWithBytesNoCopy:(void *)bytes
+                                      length:roundUpToMultiple(byteCount, METAL_REQUIRED_ALIGNMENT)
+                                     options:0
+                                 deallocator:NULL];
+        if (buffer != nil) { return buffer; }
+    }
+
+    // Exact length, not rounded: this one owns its memory, so reading past the
+    // surfels would be a genuine overrun rather than slack inside a page.
+    return [device newBufferWithBytes:bytes length:byteCount options:0];
+}
+
 struct SurfelIndexMapVertex {
     simd_packed_float2 vertices;
     
@@ -153,10 +195,8 @@ bool MetalSurfelIndexMap::draw(const std::vector<Surfel>& surfels,
     
     id<MTLBuffer> surfelsBuffer = nil;
     if (surfelCount > 0) {
-        surfelsBuffer = [_device newBufferWithBytesNoCopy:(void *)&surfels[0]
-                                                   length:roundUpToMultiple(sizeof(Surfel) * surfels.size(), 4096)
-                                                  options:0
-                                              deallocator:NULL];
+        surfelsBuffer = __makeSurfelBuffer(_device, (const void *)surfels.data(),
+                                          sizeof(Surfel) * surfels.size());
         surfelsBuffer.label = @"SurfelIndexMap.surfelsBuffer";
     }
     
@@ -261,10 +301,8 @@ bool MetalSurfelIndexMap::drawForColor(const Surfel* surfels,
     
     id<MTLBuffer> surfelsBuffer = nil;
     if (surfelCount > 0) {
-        surfelsBuffer = [_device newBufferWithBytesNoCopy:(void *)surfels
-                                                   length:roundUpToMultiple(sizeof(Surfel) * surfelCount, 4096)
-                                                  options:0
-                                              deallocator:NULL];
+        surfelsBuffer = __makeSurfelBuffer(_device, (const void *)surfels,
+                                          sizeof(Surfel) * surfelCount);
         surfelsBuffer.label = @"SurfelIndexMap.surfelsBuffer";
     }
     

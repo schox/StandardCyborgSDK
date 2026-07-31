@@ -29,6 +29,7 @@
 #import <StandardCyborgFusion/SCReconstructionManager_Private.h>
 
 #import <iostream>
+#import <mutex>
 #import <objc/runtime.h>
 
 #import "GravityEstimator.hpp"
@@ -119,8 +120,19 @@ NS_ASSUME_NONNULL_BEGIN
     BOOL _modelQueue_hasCalculatedModelConfig;
     BOOL _finalized;
     BOOL _wroteIntrinsicsToFile;
-    
+
     GravityEstimator _gravityEstimator;
+
+    // Novansa: a published copy of the surfels for readers outside the model
+    // queue, so `buildPointCloud` never reads the live vector while fusion is
+    // appending to it. See the rationale on `buildPointCloud`.
+    //
+    // Refreshed on the model queue immediately after each assimilate, but ONLY
+    // when a reader has asked since the last refresh — a client that never
+    // calls `buildPointCloud` (an offline reconstruction, say) pays nothing.
+    std::mutex _snapshotMutex;
+    Surfels _snapshot_surfels;      // guarded by _snapshotMutex
+    BOOL _snapshot_wanted;          // guarded by _snapshotMutex
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -433,26 +445,62 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (SCPointCloud *)buildPointCloud
 {
-    // TODO: Fix threading/queuing and run off of a copy in PBFModel
-    const Surfels& surfels = _modelQueue_model->getSurfels();
+    // Novansa: this used to hand out a window onto the LIVE surfel vector.
+    //
+    // The original read `_modelQueue_model->getSurfels()` from the caller's
+    // thread and, while scanning, wrapped `surfels.data()` in an NSData with
+    // `freeWhenDone:NO` — no copy, no lock — with the comment "This is an
+    // obvious thread safety issue, but we tend to get away with it 99+% of the
+    // time, so it's acceptable for now". It is not: the model queue is
+    // concurrently `push_back`ing into that vector, and a reallocation frees
+    // the pointer the NSData is still pointing at. The reader then walks freed
+    // memory, and the window it holds can be torn mid-write regardless.
+    //
+    // "99+% of the time" is a per-call figure. Foot Camera drives the live
+    // overlay from this at ~30 Hz for the length of a capture, and the odds
+    // worsen as the cloud grows — which is exactly when a scan is most
+    // expensive to lose.
+    //
+    // Fixed by reading a published copy instead (see `_snapshot_surfels`).
+    // Serialising on `_modelQueue` would have been the obvious alternative and
+    // is a deadlock: `_modelQueueMain` occupies that queue for the process
+    // lifetime, waiting on a semaphore, so a `dispatch_sync` onto it never
+    // returns.
     NSData *surfelData;
+
     if (_finalized) {
+        // Nothing is assimilating any more, so the model is stable and this can
+        // read it directly — and must, so the finished cloud is exact rather
+        // than however far the snapshot happened to get.
+        const Surfels& surfels = _modelQueue_model->getSurfels();
         surfelData = [NSData dataWithBytes:(void *)surfels.data() length:surfels.size() * sizeof(Surfel)];
     } else {
-        // While scanning, for the sake of performance, avoid copying the whole surfels data structure and return it directly
-        // This is an obvious thread safety issue, but we tend to get away with it 99+% of the time, so it's acceptable for now
-        surfelData = [NSData dataWithBytesNoCopy:(void *)surfels.data() length:surfels.size() * sizeof(Surfel) freeWhenDone:NO];
+        std::lock_guard<std::mutex> lock(_snapshotMutex);
+        // Ask the model queue to refresh after its next frame. The value read
+        // here is therefore up to one assimilate old, which is invisible in a
+        // live overlay and is the price of not blocking either side.
+        _snapshot_wanted = YES;
+        surfelData = [NSData dataWithBytes:(void *)_snapshot_surfels.data()
+                                    length:_snapshot_surfels.size() * sizeof(Surfel)];
     }
-    
+
     simd_float3 gravity = [self gravity];
-    
+
     return [[SCPointCloud alloc] initWithSurfelData:surfelData gravity:gravity];
 }
 
 - (void)reset
 {
     _finalized = NO;
-    
+
+    // Novansa: drop the published copy with the model it came from, or the
+    // first frames of the next scan render the previous scan's cloud.
+    {
+        std::lock_guard<std::mutex> lock(_snapshotMutex);
+        _snapshot_surfels.clear();
+        _snapshot_wanted = NO;
+    }
+
     dispatch_sync(_inputQueue, ^{
         _inputQueue_incomingFrameData = nil;
         _inputQueue_incomingFrameSequence = 0;
@@ -509,7 +557,23 @@ static const float kCenterDepthExpansionRatio = 1.4;
         
         // Assimilate!
         PBFAssimilatedFrameMetadata pbfMetadata = [self _modelQueue_assimilateIncomingFrameData:incomingFrameData];
-        
+
+        // Novansa: publish the surfels for off-queue readers, while we are the
+        // only thing touching them. Held only for the copy, never across the
+        // assimilate — blocking the model queue on a renderer would trade
+        // engine throughput, which is the metric that actually governs scan
+        // quality, for a display detail.
+        {
+            std::lock_guard<std::mutex> lock(_snapshotMutex);
+            if (_snapshot_wanted) {
+                // Copy-assign reuses the destination's capacity once it has
+                // grown, so after the first few frames this is a memcpy rather
+                // than an allocation.
+                _snapshot_surfels = _modelQueue_model->getSurfels();
+                _snapshot_wanted = NO;
+            }
+        }
+
         SCAssimilatedFrameMetadata metadata = SCAssimilatedFrameMetadataFromPBFAssimilatedFrameMetadata(pbfMetadata,
                                                                                                         _inputQueue_statistics.consecutiveLostTrackingCount);
         
