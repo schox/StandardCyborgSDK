@@ -11,7 +11,7 @@ target 'StandardCyborgFusion' do
   pod 'SSZipArchive'
   pod 'scsdk', :path => 'scsdk/'
   pod 'PoissonRecon', :podspec => 'StandardCyborgFusion/PoissonRecon.podspec'
-  platform :ios, '13.0'
+  platform :ios, '18.0'
 end
 
 
@@ -30,7 +30,7 @@ target 'StandardCyborgFusionTests' do
 end
 
 target 'TrueDepthFusion' do
-  platform :ios, '13.0'
+  platform :ios, '18.0'
 end
 
 target 'VisualTesterMac' do
@@ -39,12 +39,12 @@ target 'VisualTesterMac' do
 end
 
 target 'VisualTesteriOS' do
-  platform :ios, '13.0'
+  platform :ios, '18.0'
   pod 'scsdk', :path => 'scsdk/'
 end
 
 target 'StandardCyborgAlgorithmsTestbed' do
-  platform :ios, '13.0'
+  platform :ios, '18.0'
   pod 'scsdk', :path => 'scsdk/'
 end
 
@@ -61,9 +61,10 @@ post_install do |installer|
       # Suppress warnings about upgrading project to automatically select architectures
       configuration.build_settings.delete 'ARCHS'
 
-      # Update minimum deployment target
-      if configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 13.0
-        configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      # Raise every pod to the app's own minimum (iOS 18). Xcode 27 refuses
+      # anything below iOS 15, and the pods' podspecs declare much older floors.
+      if configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 18.0
+        configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'
       end
       if configuration.build_settings['MACOSX_DEPLOYMENT_TARGET'].to_f < 11.0
         configuration.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
